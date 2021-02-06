@@ -1,0 +1,46 @@
+---
+title: "Honors_stan"
+author: "Garrett Robins"
+date: "9/30/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(rstan)
+library(base)
+library(bayesplot)
+```
+
+```{r}
+data <- read.csv("womens100.csv", header = F, col.names = c("Year", "Time"))
+data <- as.data.frame(scale(data))
+```
+
+```{r}
+simp_gauss_processs <- stan_model("stan_simple_gaussian_process.stan")
+stan_data <- list(N = nrow(data), x = data$Year)
+samples <- sampling(simp_gauss_processs, stan_data)
+```
+```{r}
+posterior_y <- as.matrix(samples, pars = "y")
+head(posterior_y)
+mcmc_recover_hist(posterior_y, true = data$Year)
+```
+
+```{r}
+gp_inference <- stan_model("gp_inference.stan")
+inference_data <- list(N1 = length(data$Year), x1 = data$Year, y1 = data$Time, x2 = data$Year, N2 = length(data$Year))
+samples <- sampling(gp_inference, inference_data)
+```
+```{r}
+posterior_y <- as.matrix(samples, pars = "y2")
+head(posterior_y)
+mcmc_recover_hist(posterior_y, true = data$Time)
+mcmc_hist(posterior_y)
+```
+
